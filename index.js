@@ -243,7 +243,7 @@ bot.onText(/\/all/, async (msg) => { // get all. deprecated
 bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     logMsg(msg);
-    await bot.sendAnimation(chatId, 'CAACAgIAAxkBAAEUy3Jin9BdwtLNlzHXaPr_x6dJ91CjVgACSxgAAhhOaUnuLzvXuof7TiQE');
+    await bot.sendAnimation(chatId, 'CAACAgIAAxkBAAEU0AxioJeEj1RkGVa77FYaOS0BLab_JAACbwAD29t-AAGZW1Coe5OAdCQE');
     await storeChatId(msg);
     await handleHelp(chatId);
 });
