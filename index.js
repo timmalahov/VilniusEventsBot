@@ -19,7 +19,7 @@ new CronJob(
     //'0 9,21 * * *', // twice a day at 9 and at 21
     async () => {
         await updateProcess();
-        await bot.sendAnimation(chatId, 'CAACAgIAAxkBAAEUz_lioJWLrgR6QgMI4s-tj85fSsxeMwACXwAD29t-AAGEsFSbEa7K4yQE');
+        await bot.sendAnimation(myChatId, 'CAACAgIAAxkBAAEUz_lioJWLrgR6QgMI4s-tj85fSsxeMwACXwAD29t-AAGEsFSbEa7K4yQE');
 
         await bot.sendMessage(myChatId, `Chron at ${new Date().toLocaleString('ru', {timeZone: 'Europe/Vilnius', hour12: false})}`);
     },

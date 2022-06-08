@@ -12,8 +12,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@replit/database": "^2.0.2",
     "axios": "^0.27.2",
+    "cron": "^2.0.0",
     "dotenv": "^16.0.1",
+    "keep-alive-replit": "^1.0.0",
     "node-telegram-bot-api": "^0.57.0",
     "nodemon": "^2.0.16"
   }
