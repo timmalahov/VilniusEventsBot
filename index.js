@@ -1,6 +1,7 @@
 const TelegramApi = require('node-telegram-bot-api');
 const axios = require('axios');
-const { getConvertedItem, getFormattedTimeFromEventDate, getHelpMessage, logMsg } = require('./utils');
+const { getConvertedItem, getFormattedTimeFromEventDate, getHelpMessage, logMsg, logCronMessage } = require('./utils');
+const { animations, cronTasks } = require('./constants');
 require('dotenv').config();
 const CronJob = require('cron').CronJob;
 require('keep-alive-replit').listen(80);
@@ -11,28 +12,12 @@ const Client = require("@replit/database");
 const dbClient = new Client();
 const bot = new TelegramApi(token, { polling: true });
 
-const animations = {
-  thinking: 'CAACAgIAAxkBAAEUz_lioJWLrgR6QgMI4s-tj85fSsxeMwACXwAD29t-AAGEsFSbEa7K4yQE',
-  happy: 'CAACAgIAAxkBAAEU0_9ioSotv_JRi0X6IN9zzyry2WuE7AACZgAD29t-AAGTzMPQDS2PbCQE'
-};
-
 new CronJob(
-  // '*/2 * * * *', // every two minues
-  // '0 */3 * * *', // every 3 hours
-  // '0 9-20/3 * * *', // every 3 hours 9-21
-  '0 9-20 * * *', // every hour from 9 to 20
-  // '0 * * * *', // every hour
-  //'0 9,21 * * *', // twice a day at 9 and at 21
+  cronTasks.everyThreeHoursFromNineToTwenty,
   async () => {
-    const newEvents = await updateProcess();
+    const newEvents = await updateAndNotify();
     const animationId = newEvents.count ? animations.happy : animations.thinking;
-    await bot.sendAnimation(myChatId, animationId);
-    await bot.sendMessage(myChatId, `
-Chron at ${new Date().toLocaleString('ru', { timeZone: 'Europe/Vilnius', hour12: false })}
-
-New events found: ${newEvents.count}
-${newEvents.events.map(event => event.link).join('\n')}
-Keep on waiting`);
+    await logCronMessage(myChatId, bot, animationId, newEvents);
   },
   null,
   true, // job.start() not needed if true
@@ -48,13 +33,13 @@ const CHAT_ID_DICTIONARY_KEY = 'chatIdDictionary';
  * Checks for new events
  * @returns {Promise<{count: number, events: *[]}>} - object containing new events and cmount of those in count.
  */
-const updateEvents = async () => {
+const fetchNewEvents = async () => {
   const eventsData = await axios
     .get('https://www.vilnius-events.lt/en/api/')
     .then(res => res.data)
     .catch(async error => {
       console.error(error);
-      await bot.sendMessage(chatId, 'Something went wrong');
+      await bot.sendMessage(myChatId, 'Something went wrong fetching events data from API');
     })
 
   const prevEventsData = await dbClient.get('events') || {};
@@ -68,17 +53,17 @@ const updateEvents = async () => {
   let newEventsSummary = {
     count: 0,
     events: [],
+    dbData: null
   };
 
-  for (key in dbData) {
+  for (let key in dbData) {
     if (!prevEventsData[key]) {
       newEventsSummary.count++;
       newEventsSummary.events = newEventsSummary.events.concat(dbData[key]);
     }
   }
 
-  await dbClient.set('events', dbData);
-
+  newEventsSummary.dbData = dbData;
   return newEventsSummary;
 };
 
@@ -88,25 +73,31 @@ const storeChatId = async (msg) => {
   const chatIdDictionary = await dbClient.get(CHAT_ID_DICTIONARY_KEY) || {};
   const newChatIdDictionary = { ...chatIdDictionary, [chatId]: chatInfo };
   await dbClient.set(CHAT_ID_DICTIONARY_KEY, newChatIdDictionary);
+
+  await bot.sendAnimation(myChatId, animations.newSubscriber);
+  await bot.sendMessage(myChatId, `New subscriber - ${ chatInfo.title || chatInfo.username }`);
 };
 
-const updateProcess = async () => {
-  const newEventsData = await updateEvents();
-  if (newEventsData.count > 0) {
+const updateAndNotify = async (notify = true) => {
+  const newEventsData = await fetchNewEvents();
+
+  if (newEventsData.count === 0) return newEventsData;
+
+  await dbClient.set('events', newEventsData.dbData); // save to db
+
+  if (notify) {
     const subscribersChatIdList = await dbClient.get(CHAT_ID_DICTIONARY_KEY);
 
-    console.log('subscribersChatIdList', subscribersChatIdList);
-
-    for (chatId in subscribersChatIdList) {
+    for (let chatId in subscribersChatIdList) {
       await bot.sendMessage(chatId, 'New upcoming events:');
-      await handleNextEventsRequest(chatId, newEventsData.count, SHORT_MODIFIER, newEventsData.events);
+      await sendEvents(chatId, newEventsData.count, SHORT_MODIFIER, newEventsData.events);
     }
   }
   return newEventsData;
 }
 
-const handleNextEventsRequest = async (chatId, amount, modifier, events) => { // TODO жэстачайшэ зарефакторить!
-  bot.sendChatAction(chatId, 'typing');
+const sendEvents = async (chatId, amount, modifier, events) => { // TODO жэстачайшэ зарефакторить!
+  await bot.sendChatAction(chatId, 'typing');
 
   const finalAmount = amount > 10 ? 10 : amount;
 
@@ -126,28 +117,28 @@ const handleNextEventsRequest = async (chatId, amount, modifier, events) => { //
     const mediaPhotoArray = nextEvents.map((event, index) => ({
       type: 'photo',
       media: event.image_src,
-      caption: getConvertedItem(event, index),
+      caption: getConvertedItem(event, index)
     }));
     await bot.sendMediaGroup(chatId, mediaPhotoArray);
 
     if (modifier === SHORT_POLL_MODIFIER) {
-      const pollOptions = nextEvents.map((event, index) => `${index}. ${event.title}`);
+      const pollOptions = nextEvents.map((event, index) => `${ index }. ${ event.title }`);
       const form = {
         is_anonymous: true,
         allows_multiple_answers: true,
         disable_notification: true,
-        protect_content: true,
+        protect_content: true
       }
-      bot.sendPoll(chatId, 'So which one will it be?', pollOptions, form);
+      await bot.sendPoll(chatId, 'So which one will it be?', pollOptions, form);
     }
     return;
   }
 
-  nextEvents.forEach(async (event, index) => {
-    await bot.sendPhoto(chatId, event.image_src, {
-      caption: getConvertedItem(event, index)
+  for (let i = 0; i < nextEvents.length; i++) {
+    await bot.sendPhoto(chatId, nextEvents[i].image_src, {
+      caption: getConvertedItem(nextEvents[i], i)
     })
-  });
+  }
 }
 
 const handleUnknownCommand = async (chatId) => {
@@ -161,14 +152,12 @@ const handleHelp = async (chatId) => {
 
 const handleNextWithOptions = async (chatId, text) => {
   const [command, amount = 1, modifier] = text.split(' ');
-  await handleNextEventsRequest(chatId, amount, modifier);
+  await sendEvents(chatId, amount, modifier);
 };
 
 bot.onText(/\/subscribe/, async (msg) => {
   logMsg(msg);
-  const chatId = msg.chat.id;
-  const text = msg.text;
-  storeChatId(msg);
+  await storeChatId(msg);
 });
 
 bot.onText(/\/tst( +\d)?/, async (msg) => {
@@ -191,14 +180,14 @@ bot.onText(/\/next( +\d)?/, async (msg) => {
 
 bot.onText(/\/short$/, async (msg) => {
   logMsg(msg);
-  const text = `/next 10 ${SHORT_MODIFIER}`;
+  const text = `/next 10 ${ SHORT_MODIFIER }`;
   const chatId = msg.chat.id;
   await handleNextWithOptions(chatId, text);
 });
 
 bot.onText(/\/shortpoll$/, async (msg) => {
   logMsg(msg);
-  const text = `/next 10 ${SHORT_POLL_MODIFIER}`;
+  const text = `/next 10 ${ SHORT_POLL_MODIFIER }`;
   const chatId = msg.chat.id;
   await handleNextWithOptions(chatId, text);
 });
@@ -206,32 +195,37 @@ bot.onText(/\/shortpoll$/, async (msg) => {
 bot.onText(/\/update/, async (msg) => { // temp manual update
   logMsg(msg);
   const chatId = msg.chat.id;
-  await bot.sendChatAction(chatId, 'typing');
-  const newEventsData = await updateEvents();
+  if (chatId != myChatId) {
+    await handleUnknownCommand(chatId);
+    return;
+  }
+
+  await bot.sendChatAction(myChatId, 'typing');
+  const newEventsData = await updateAndNotify(false);
   await bot.sendMessage(chatId, `Db is updated
-events added: ${newEventsData.count}
-events: 
-${newEventsData.events.map(event => event.link).join('\n')}`);
+   events added: ${ newEventsData.count }
+   events:
+   ${ newEventsData.events.map(event => event.link).join('\n') }`);
 });
 
 bot.onText(/\/cleardb/, async (msg) => { // temp manual events removal
   logMsg(msg);
   const chatId = msg.chat.id;
-  bot.sendChatAction(chatId, 'typing');
+  await bot.sendChatAction(chatId, 'typing');
   await dbClient.delete('events');
-  bot.sendMessage(chatId, `Db events are cleared`);
+  await bot.sendMessage(chatId, `Db events are cleared`);
 });
 
 bot.onText(/\/dropdb/, async (msg) => { // temp manual db cleanup
   logMsg(msg);
   const chatId = msg.chat.id;
   if (chatId != myChatId) {
-    handleUnknownCommand(chatId);
+    await handleUnknownCommand(chatId);
     return;
   }
-  bot.sendChatAction(chatId, 'typing');
+  await bot.sendChatAction(chatId, 'typing');
   await dbClient.empty();
-  bot.sendMessage(chatId, `Db is emptied`);
+  await bot.sendMessage(chatId, `Db is emptied`);
 });
 
 bot.onText(/\/runupd/, async (msg) => { // temp manual updateProcess start
@@ -240,19 +234,19 @@ bot.onText(/\/runupd/, async (msg) => { // temp manual updateProcess start
     await handleUnknownCommand(chatId);
     return;
   }
-  await updateProcess();
+  await updateAndNotify();
 });
 
 bot.onText(/\/all/, async (msg) => { // get all. deprecated
   const chatId = msg.chat.id;
   logMsg(msg);
-  await handleNextEventsRequest(chatId);
+  await sendEvents(chatId);
 });
 
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   logMsg(msg);
-  await bot.sendAnimation(chatId, 'CAACAgIAAxkBAAEU0AxioJeEj1RkGVa77FYaOS0BLab_JAACbwAD29t-AAGZW1Coe5OAdCQE');
+  await bot.sendAnimation(chatId, animations.start);
   await storeChatId(msg);
   await handleHelp(chatId);
 });
@@ -264,7 +258,6 @@ bot.onText(/\/\?|\/help/, async (msg) => {
 });
 
 bot.onText(/\/pic/, async (msg) => {
-  const chatId = msg.chat.id;
   logMsg(msg);
   await bot.sendPhoto(myChatId, 'https://picsum.photos/500/500');
 });
