@@ -1,17 +1,25 @@
 module.exports = {
-  getConvertedItem: (item, index) => {
-    return `${ index + 1 } ➡️ ${ item.title }️`
-      + '\n\n' + `📅 ${ item.date }`
-      + '\n' + `🗺️ ${ item.location_name } ${ item.location_address } 
-(https://maps.google.com/?q=${ encodeURIComponent(item.location_address ? item.location_address : item.location_name) })`
-      + '\n\n' + `${ item.content.substring(0, 200) + '...' }`
-      + '\n\n' + `${ item.link }`;
-  },
-  getFormattedTimeFromEventDate: (dateString) => {
-    const eventTime = new Date(dateString).getTime();
-    if (!isNaN(eventTime)) {
-      return eventTime;
-    }
+    getConvertedItem: (item, index) => {
+        return `${item.title.replace(/[^a-zA-Z ]/g, "")}️`
+            + '\n\n' + `📅 ${item.date}`
+            + '\n' + `🗺️ ${item.location_name.substring(0,200)} ${item.location_address.substring(0,200)} 
+(https://maps.google.com/?q=${encodeURIComponent(item.location_address ? item.location_address : item.location_name)})`
+            + '\n\n' + `${item.content.substring(0,200) + '...'}`
+            + '\n\n' + `${item.link}`;
+    },
+    getConvertedIVItem: (item, index) => {
+        return `${item.title.replace(/[^a-zA-Z ]/g, "")}️`
+            + '\n\n' + `📅 ${item.date}`
+            + '\n' + `🗺️ ${item.location_name} ${item.location_address}`
+            + '\n' + `[show on map](https://maps.google.com/?q=${encodeURIComponent(item.location_address ? item.location_address : item.location_name)})`
+            + '\n\n' + `[.](https://t.me/iv?url=${item.link}&rhash=3479c8d56341a6)`
+            + '' + `${item.content.substring(0,200) + '...'}`;
+    },
+    getFormattedTimeFromEventDate: (dateString) => {
+        const eventTime = new Date(dateString).getTime();
+        if (!isNaN(eventTime)) {
+            return eventTime;
+        }
 
     if (dateString.split(' - ').length > 1) {
       return new Date(dateString.split(' - ')[1]).getTime();
