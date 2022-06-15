@@ -1,6 +1,6 @@
 const TelegramApi = require('node-telegram-bot-api');
 const axios = require('axios');
-const { getConvertedItem, getFormattedTimeFromEventDate, getHelpMessage, logMsg } = require('./utils');
+const { getConvertedItem, getConvertedIVItem, getFormattedTimeFromEventDate, getHelpMessage, logMsg } = require('./utils');
 require('dotenv').config();
 const CronJob = require('cron').CronJob;
 require('keep-alive-replit').listen(80);
@@ -25,14 +25,29 @@ new CronJob(
   //'0 9,21 * * *', // twice a day at 9 and at 21
   async () => {
     const newEvents = await updateProcess();
-    const animationId = newEvents.count ? animations.happy : animations.thinking;
-    await bot.sendAnimation(myChatId, animationId);
-    await bot.sendMessage(myChatId, `
+
+    if (newEvents.count) {
+      await bot.sendPhoto(myChatId, 'https://i.picsum.photos/id/717/1000/1000.jpg?hmac=qm5FkuwjhKdgBdYuANb10aU9PivVojfQfmYsY41j6As', {
+        caption: `
 Chron at ${new Date().toLocaleString('ru', { timeZone: 'Europe/Vilnius', hour12: false })}
 
 New events found: ${newEvents.count}
 ${newEvents.events.map(event => event.link).join('\n')}
-Keep on waiting`);
+Keep on waiting`,
+      });
+
+      // await bot.sendAnimation(myChatId, animations.happy);
+
+      //       await bot.sendMessage(myChatId, `
+      // Chron at ${new Date().toLocaleString('ru', { timeZone: 'Europe/Vilnius', hour12: false })}
+
+      // New events found: ${newEvents.count}
+      // ${newEvents.events.map(event => event.link).join('\n')}
+      // Keep on waiting`);
+      //       return;
+    }
+
+    await bot.sendAnimation(myChatId, animations.thinking);
   },
   null,
   true, // job.start() not needed if true
@@ -98,8 +113,12 @@ const updateProcess = async () => {
     console.log('subscribersChatIdList', subscribersChatIdList);
 
     for (chatId in subscribersChatIdList) {
-      await bot.sendMessage(chatId, 'New upcoming events:');
-      await handleNextEventsRequest(chatId, newEventsData.count, SHORT_MODIFIER, newEventsData.events);
+      try {
+        await bot.sendMessage(chatId, 'New upcoming events:');
+        await handleNextEventsRequest(chatId, newEventsData.count, SHORT_MODIFIER, newEventsData.events);
+      } catch (e) {
+        console.error('Mass ', e);
+      }
     }
   }
   return newEventsData;
@@ -117,17 +136,21 @@ const handleNextEventsRequest = async (chatId, amount, modifier, events) => { //
 
   const nextEvents = eventsData
     .filter(item => {
-      return getFormattedTimeFromEventDate(item.date) > currentTime;
+      return getFormattedTimeFromEventDate(item.date) > currentTime && !item.image_src.includes('webp');
     })
     .sort((prevItem, nextItem) => getFormattedTimeFromEventDate(prevItem.date) - getFormattedTimeFromEventDate(nextItem.date))
     .slice(0, finalAmount); // amount === undefined => slice all array
 
   if (mediaModifiers.includes(modifier)) {
-    const mediaPhotoArray = nextEvents.map((event, index) => ({
+    const mediaPhotoArray = nextEvents
+      .filter(event => event.image_src)
+      .map((event, index) => ({
       type: 'photo',
       media: event.image_src,
       caption: getConvertedItem(event, index),
+      // parse_mode: 'HTML',
     }));
+    console.log(mediaPhotoArray);
     await bot.sendMediaGroup(chatId, mediaPhotoArray);
 
     if (modifier === SHORT_POLL_MODIFIER) {
@@ -144,10 +167,23 @@ const handleNextEventsRequest = async (chatId, amount, modifier, events) => { //
   }
 
   nextEvents.forEach(async (event, index) => {
-    await bot.sendPhoto(chatId, event.image_src, {
-      caption: getConvertedItem(event, index)
+    await bot.sendMessage(chatId, `[${event.title.replace(/[^a-zA-Z ]/g, "")}](https://t.me/iv?url=${event.link}&rhash=3479c8d56341a6)`, {
+      parse_mode: 'Markdown',
     })
   });
+
+  // nextEvents.forEach(async (event, index) => {
+  //   await bot.sendPhoto(chatId, event.image_src, {
+  //     caption: getConvertedIVItem(event),
+  //     parse_mode: 'Markdown',
+  //   })
+  // });
+  
+  // nextEvents.forEach(async (event, index) => {
+  //   await bot.sendPhoto(chatId, event.image_src, {
+  //     caption: getConvertedItem(event, index)
+  //   })
+  // });
 }
 
 const handleUnknownCommand = async (chatId) => {
@@ -266,7 +302,18 @@ bot.onText(/\/\?|\/help/, async (msg) => {
 bot.onText(/\/pic/, async (msg) => {
   const chatId = msg.chat.id;
   logMsg(msg);
-  await bot.sendPhoto(myChatId, 'https://picsum.photos/500/500');
+  if (chatId != myChatId) {
+    await handleUnknownCommand(chatId);
+    return;
+  }
+
+  await bot.sendPhoto(chatId, 'https://i.picsum.photos/id/717/1000/1000.jpg?hmac=qm5FkuwjhKdgBdYuANb10aU9PivVojfQfmYsY41j6As', {
+    caption: `
+    *bold text*
+    https://replit.com/@oneplusuniverse/VilniusEventsBot#index.js:108:22
+    [replit](https://replit.com/@oneplusuniverse/VilniusEventsBot#index.js:108:22)`,
+    parse_mode: 'Markdown',
+  });
 });
 
 // bot.onText(/\/(.+)/, async (msg) => { // /\/(.+)/ => anything
