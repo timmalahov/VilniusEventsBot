@@ -17,7 +17,7 @@ new CronJob(
   async () => {
     const newEvents = await updateAndNotify();
     if (newEvents.count) {
-      await logCronMessage(myChatId, bot, animations.thinking, newEvents);
+      await logCronMessage(myChatId, bot, animations.happy, newEvents);
       return;
     }
     await bot.sendAnimation(myChatId, animations.thinking);
