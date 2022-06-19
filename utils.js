@@ -3,20 +3,20 @@ const { ivRHash } = require('./constants');
 const getIVLink = (text, link) => `[${ text }](https://t.me/iv?url=${ link }&rhash=${ ivRHash })`
 
 const getConvertedItem = (item, index) => {
-  return `${ getIVLink(item.title.replace(/[^a-zA-Z ]/g, ""), item.link) }️`
-    + '\n' + `${ item.date }`
-    + '\n' + `${ item.location_name.substring(0, 200) } ${ item.location_address.substring(0, 200) } `
-    + ` ([see on map](https://maps.google.com/?q=${ encodeURIComponent(item.location_address ? item.location_address : item.location_name) }))`
+  return `${ item.title.replace(/[^a-zA-Z ]/g, "") }️`
+    + '\n\n' + `📅 ${ item.date }`
+    + '\n' + `🗺️ ${ item.location_name.substring(0, 200) } ${ item.location_address.substring(0, 200) } 
+(https://maps.google.com/?q=${ encodeURIComponent(item.location_address ? item.location_address : item.location_name) })`
     + '\n\n' + `${ item.content.substring(0, 200) + '...' }`
     + '\n\n' + `${ item.link }`;
 };
 
 const getConvertedIVItem = (item, index) => {
   return `${ getIVLink(item.title.replace(/[^a-zA-Z ]/g, ""), item.link) }️`
-    + '\n' + `${ item.date }`
-    + '\n' + `${ item.location_name.substring(0, 200) } ${ item.location_address.substring(0, 200) } `
-    + ` ([see on map](https://maps.google.com/?q=${ encodeURIComponent(item.location_address ? item.location_address : item.location_name) }))`
-    + '\n\n';
+    + '\n\n' + `${ item.content.substring(0, 200) + '...' }`
+    + '\n\n' + `${ item.date }`
+    + '\n\n' + `${ item.location_name } ${ item.location_address }`
+    + '\n\n' + `[See on map](https://maps.google.com/?q=${ encodeURIComponent(item.location_address ? item.location_address : item.location_name) })`;
 };
 
 const getFormattedTimeFromEventDate = (dateString) => {
