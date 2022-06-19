@@ -1,6 +1,14 @@
 const TelegramApi = require('node-telegram-bot-api');
 const axios = require('axios');
-const { getConvertedItem, getFormattedTimeFromEventDate, getHelpMessage, logMsg, logCronMessage } = require('./utils');
+const {
+  getConvertedItem,
+  getFormattedTimeFromEventDate,
+  getHelpMessage,
+  logMsg,
+  logCronMessage,
+  getIVLink,
+  getConvertedIVItem
+} = require('./utils');
 const { animations, cronTasks } = require('./constants');
 require('dotenv').config();
 const CronJob = require('cron').CronJob;
@@ -145,7 +153,7 @@ const sendEvents = async (chatId, amount, modifier, events) => { // TODO жэс�
   }
 
   for (let i = 0; i < nextEvents.length; i++) {
-    await bot.sendMessage(chatId, `[${ nextEvents[i].title.replace(/[^a-zA-Z ]/g, "") }](https://t.me/iv?url=${ nextEvents[i].link }&rhash=3479c8d56341a6)`, {
+    await bot.sendMessage(chatId, getConvertedIVItem(nextEvents[i]), {
       parse_mode: 'Markdown'
     });
   }
@@ -251,6 +259,12 @@ bot.onText(/\/all/, async (msg) => { // get all. deprecated
   const chatId = msg.chat.id;
   logMsg(msg);
   await sendEvents(chatId);
+});
+
+bot.onText(/\/iv/, async (msg) => { // get all. deprecated
+  const chatId = msg.chat.id;
+  logMsg(msg);
+  await sendEvents(chatId, 5);
 });
 
 bot.onText(/\/start/, async (msg) => {

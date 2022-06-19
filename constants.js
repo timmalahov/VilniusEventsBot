@@ -12,5 +12,6 @@ module.exports = {
     everyHourFromNineToTwenty: '0 9-20 * * *', // every hour from 9 to 20
     everyHour: '0 * * * *', // every hour
     twiceADayAtNine: '0 9,21 * * *' // twice a day at 9 and at 21
-  }
+  },
+  ivRHash: '3479c8d56341a6'
 }
