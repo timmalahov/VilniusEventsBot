@@ -137,7 +137,9 @@ const sendEvents = async (chatId, amount, modifier, events) => { // TODO жэс�
         caption: getConvertedItem(event, index)
       }));
     console.log('mediaPhotoArray', mediaPhotoArray);
-    await bot.sendMediaGroup(chatId, mediaPhotoArray);
+    await bot.sendMediaGroup(chatId, mediaPhotoArray, {
+      parse_mode: 'Markdown'
+    });
 
     if (modifier === SHORT_POLL_MODIFIER) {
       const pollOptions = nextEvents.map((event, index) => `${ index }. ${ event.title }`);
