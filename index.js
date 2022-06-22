@@ -37,7 +37,9 @@ new CronJob(
 
 const SHORT_MODIFIER = 'short';
 const SHORT_POLL_MODIFIER = 'shortpoll';
+const IV_BASE_MODIFIER = 'ivBaseModifier';
 const mediaModifiers = [SHORT_MODIFIER, SHORT_POLL_MODIFIER];
+const ivModifiers = [IV_BASE_MODIFIER];
 const CHAT_ID_DICTIONARY_KEY = 'chatIdDictionary';
 
 /**
@@ -101,8 +103,9 @@ const updateAndNotify = async (notify = true) => {
 
     for (let chatId in subscribersChatIdList) {
       try {
-        await bot.sendMessage(chatId, 'New upcoming events:');
-        await sendEvents(chatId, newEventsData.count, SHORT_MODIFIER, newEventsData.events);
+        // await bot.sendMessage(chatId, 'New upcoming events:');
+        // await sendEvents(chatId, newEventsData.count, SHORT_MODIFIER, newEventsData.events);
+        await sendEvents(chatId, newEventsData.count, IV_BASE_MODIFIER, newEventsData.events);
       } catch (e) {
         console.error('Batch messages error [updateAndNotify]', e);
       }
@@ -149,6 +152,16 @@ const sendEvents = async (chatId, amount, modifier, events) => { // TODO жэс�
       }
       await bot.sendPoll(chatId, 'So which one will it be?', pollOptions, form);
     }
+    return;
+  }
+
+  if (ivModifiers.includes(modifier)) {
+    for (let i = 0; i < nextEvents.length; i++) {
+      await bot.sendMessage(chatId, getConvertedIVItem(nextEvents[i]), {
+        parse_mode: 'Markdown'
+      });
+    }
+
     return;
   }
 
