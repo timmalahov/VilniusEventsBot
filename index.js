@@ -188,6 +188,13 @@ const handleNextWithOptions = async (chatId, text) => {
   await sendEvents(chatId, amount, modifier);
 };
 
+const handleUnsubscribe = async (chatId) => {
+  const chatIdDictionary = await dbClient.get('chatIdDictionary');
+  delete chatIdDictionary[chatId];
+  await dbClient.set('chatIdDictionary', chatIdDictionary);
+  await bot.sendMessage(chatId, `Ok, no more messages for you`);
+};
+
 bot.onText(/\/subscribe/, async (msg) => {
   logMsg(msg);
   await storeChatId(msg);
@@ -202,6 +209,9 @@ bot.onText(/\/tst( +\d)?/, async (msg) => {
 
   const chatIdDictionary = await dbClient.get('chatIdDictionary');
   await bot.sendMessage(chatId, JSON.stringify(chatIdDictionary, null, 2));
+
+  const chatMember = awaitbot.getChatMember(chatId, chatId);
+  await bot.sendMessage(chatId, JSON.stringify(chatMember, null, 2));
 });
 
 bot.onText(/\/next( +\d)?/, async (msg) => {
@@ -326,11 +336,7 @@ bot.onText(/\/updchan/, async (msg) => {
 bot.onText(/\/unsubscribe/, async (msg) => {
   logMsg(msg);
   const chatId = msg.chat.id;
-
-  const chatIdDictionary = await dbClient.get('chatIdDictionary');
-  delete chatIdDictionary[chatId];
-  await dbClient.set('chatIdDictionary', chatIdDictionary);
-  await bot.sendMessage(chatId, ``);
+  await handleUnsubscribe(chatId);
 });
 
 bot.onText(/\/notchan/, async (msg) => {
