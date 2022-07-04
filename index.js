@@ -210,6 +210,11 @@ const printDictionaries = async (chatId) => {
         + `\n  Status: ${chatMember.status}\n`;
     } catch (e) {
       console.error('ERROR: ', e);
+
+      outputString +=
+        `\n*${ subscribersChatIdList[chatId].title || subscribersChatIdList[chatId].name }*`
+        + `\n  Type: ${ subscribersChatIdList[chatId].type || subscribersChatIdList[chatId].user ? 'user' : 'unknown'}`
+        + `\n  Status: ${chatMember.status || 'unkonwn'}\n`;
     }
   }
 
