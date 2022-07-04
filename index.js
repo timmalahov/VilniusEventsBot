@@ -207,11 +207,22 @@ bot.onText(/\/tst( +\d)?/, async (msg) => {
   if (chatId != myChatId) return;
   console.log(process.env.REPLIT_DB_URL);
 
-  const chatIdDictionary = await dbClient.get('chatIdDictionary');
-  await bot.sendMessage(chatId, JSON.stringify(chatIdDictionary, null, 2));
+  // await bot.sendMessage(chatId, JSON.stringify(chatIdDictionary, null, 2));
+  // const chatMember = await bot.getChatMember(chatId, chatId);
+  // await bot.sendMessage(chatId, JSON.stringify(chatMember, null, 2));
 
-  const chatMember = awaitbot.getChatMember(chatId, chatId);
-  await bot.sendMessage(chatId, JSON.stringify(chatMember, null, 2));
+  const subscribersChatIdList = await dbClient.get(CHAT_ID_DICTIONARY_KEY);
+
+  for (let chatId in subscribersChatIdList) {
+    try {
+      const chatMember = await bot.getChatMember(chatId, chatId);
+      subscribersChatIdList[chatId] = chatMember;
+    } catch (e) {
+      console.error('ERROR: ', e);
+    }
+  }
+
+  await bot.sendMessage(chatId, JSON.stringify(subscribersChatIdList, null, 2));
 });
 
 bot.onText(/\/next( +\d)?/, async (msg) => {
@@ -346,5 +357,5 @@ bot.onText(/\/notchan/, async (msg) => {
     await handleUnknownCommand(chatId);
     return;
   }
-  await bot.sendMessage(chatId, getChannelInviteMessage);
+  await bot.sendMessage(chatId, getChannelInviteMessage());
 });
