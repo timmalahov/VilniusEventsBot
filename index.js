@@ -15,6 +15,7 @@ const CronJob = require('cron').CronJob;
 require('keep-alive-replit').listen(80);
 
 const token = process.env.TELEGRAM_TOKEN;
+const myChannelId = process.env.CHANNEL_ID;
 const myChatId = process.env.MY_CHAT_ID;
 const Client = require("@replit/database");
 const dbClient = new Client();
@@ -296,6 +297,7 @@ bot.onText(/\/\?|\/help/, async (msg) => {
 
 bot.onText(/\/pic/, async (msg) => {
   logMsg(msg);
+  const chatId = msg.chat.id;
   if (chatId != myChatId) {
     await handleUnknownCommand(chatId);
     return;
@@ -310,8 +312,26 @@ bot.onText(/\/pic/, async (msg) => {
   });
 });
 
-// bot.onText(/\/(.+)/, async (msg) => { // /\/(.+)/ => anything
-//     const chatId = msg.chat.id;
-//     logMsg(msg);
+bot.onText(/\/updchan/, async (msg) => {
+  logMsg(msg);
+  const chatId = msg.chat.id;
+  if (chatId != myChatId) {
+    await handleUnknownCommand(chatId);
+    return;
+  }
+  await sendEvents(myChannelId);
+});
+
+// bot.onText(/\/subchan/, async (msg) => {
+//   logMsg(msg);
+//   const chatId = msg.chat.id;
+//   if (chatId != myChatId) {
 //     await handleUnknownCommand(chatId);
+//     return;
+//   }
+
+// //  const chatId = msg.chat.id;
+//   //const chatInfo = msg.chat;
+  
+//   await storeChatId({chat: {id: myChannelId, first_name: 'VilniusEventsChannel'}});
 // });
