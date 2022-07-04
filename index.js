@@ -206,15 +206,15 @@ const printDictionaries = async (chatId) => {
       subscribersChatIdList[chatId] = chatMember;
       outputString +=
         `\n*${ chatMember.title || chatMember.name || chatMember.user.first_name + ' ' + chatMember.user.last_name }*`
-        + `\n  Type: ${ chatMember.type || chatMember.user ? 'user' : 'unknown'}`
-        + `\n  Status: ${chatMember.status}\n`;
+        + `\n  Type: ${ chatMember.type || chatMember.user ? 'user' : 'unknown' }`
+        + `\n  Status: ${ chatMember.status }\n`;
     } catch (e) {
       console.error('ERROR: ', e);
 
       outputString +=
         `\n*${ subscribersChatIdList[chatId].title || subscribersChatIdList[chatId].name }*`
-        + `\n  Type: ${ subscribersChatIdList[chatId].type || subscribersChatIdList[chatId].user ? 'user' : 'unknown'}`
-        + `\n  Status: ${chatMember.status || 'unkonwn'}\n`;
+        + `\n  Type: ${ subscribersChatIdList[chatId].type || subscribersChatIdList[chatId].user ? 'user' : 'unknown' }`
+        + `\n  Status: ${ subscribersChatIdList[chatId].status || 'unkonwn' }\n`;
     }
   }
 
