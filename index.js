@@ -322,16 +322,17 @@ bot.onText(/\/updchan/, async (msg) => {
   await sendEvents(myChannelId);
 });
 
-// bot.onText(/\/subchan/, async (msg) => {
-//   logMsg(msg);
-//   const chatId = msg.chat.id;
-//   if (chatId != myChatId) {
-//     await handleUnknownCommand(chatId);
-//     return;
-//   }
+bot.onText(/\/unsubscribe/, async (msg) => {
+  logMsg(msg);
+  const chatId = msg.chat.id;
 
-// //  const chatId = msg.chat.id;
-//   //const chatInfo = msg.chat;
-  
-//   await storeChatId({chat: {id: myChannelId, first_name: 'VilniusEventsChannel'}});
-// });
+  const chatIdDictionary = await dbClient.get('chatIdDictionary');
+  delete chatIdDictionary[chatId];
+  await bot.sendMessage(chatId, JSON.stringify(chatIdDictionary, null, 2));
+  await dbClient.set('chatIdDictionary', chatIdDictionary);
+});
+
+bot.onText(/\/notchan/, async (msg) => {
+  logMsg(msg);
+  await bot.sendMessage(chatId, `Hi, there's a new channel available: https://t.me/+UT5NK83l_ABiMDUy`);
+});
