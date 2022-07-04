@@ -7,7 +7,8 @@ const {
   logMsg,
   logCronMessage,
   getIVLink,
-  getConvertedIVItem
+  getConvertedIVItem,
+  getChannelInviteMessage
 } = require('./utils');
 const { animations, cronTasks } = require('./constants');
 require('dotenv').config();
@@ -328,11 +329,16 @@ bot.onText(/\/unsubscribe/, async (msg) => {
 
   const chatIdDictionary = await dbClient.get('chatIdDictionary');
   delete chatIdDictionary[chatId];
-  await bot.sendMessage(chatId, JSON.stringify(chatIdDictionary, null, 2));
   await dbClient.set('chatIdDictionary', chatIdDictionary);
+  await bot.sendMessage(chatId, ``);
 });
 
 bot.onText(/\/notchan/, async (msg) => {
   logMsg(msg);
-  await bot.sendMessage(chatId, `Hi, there's a new channel available: https://t.me/+UT5NK83l_ABiMDUy`);
+  const chatId = msg.chat.id;
+  if (chatId != myChatId) {
+    await handleUnknownCommand(chatId);
+    return;
+  }
+  await bot.sendMessage(chatId, getChannelInviteMessage);
 });

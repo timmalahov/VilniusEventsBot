@@ -43,6 +43,14 @@ const getHelpMessage = () => (
   '\n' + 'Created: 03.06.2022'
 );
 
+const getChannelInviteMessage = () => (
+  'Great news!' +
+  '\n\n' + 'There\'s a new channel with all the events available: ' +
+  '\n' + 'https://t.me/+UT5NK83l_ABiMDUy' +
+  '\n\n' + 'So if got annoyed by the messages from the bot in your channel you can either remove the bot or use the command /unsubscribe to stop the updates.' +
+  '\n\n' + 'You can still find all of those messages in the channel'
+)
+
 const logMsg = (msg) => {
   const chatId = msg.chat.id;
   console.group(`┌──[ chat id: ${ chatId } ]────────`);
@@ -67,5 +75,6 @@ module.exports = {
   getFormattedTimeFromEventDate,
   getHelpMessage,
   logMsg,
-  logCronMessage
+  logCronMessage,
+  getChannelInviteMessage
 };
