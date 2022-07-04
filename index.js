@@ -213,7 +213,7 @@ const printDictionaries = async (chatId) => {
 
       outputString +=
         `\n*${ subscribersChatIdList[chatId].title || subscribersChatIdList[chatId].name }*`
-        + `\n  Type: ${ subscribersChatIdList[chatId].type || subscribersChatIdList[chatId].user ? 'user' : 'unknown' }`
+        + `\n  Type: ${ subscribersChatIdList[chatId].type }`
         + `\n  Status: ${ subscribersChatIdList[chatId].status || 'unkonwn' }\n`;
     }
   }
