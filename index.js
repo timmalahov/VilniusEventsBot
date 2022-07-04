@@ -195,6 +195,28 @@ const handleUnsubscribe = async (chatId) => {
   await bot.sendMessage(chatId, `Ok, no more messages for you`);
 };
 
+const printDictionaries = async (chatId) => {
+  const subscribersChatIdList = await dbClient.get(CHAT_ID_DICTIONARY_KEY);
+
+  let outputString = '';
+
+  for (let chatId in subscribersChatIdList) {
+    try {
+      const chatMember = await bot.getChatMember(chatId, chatId);
+      subscribersChatIdList[chatId] = chatMember;
+      outputString +=
+        `\n*${ chatMember.title || chatMember.name || chatMember.user.first_name + ' ' + chatMember.user.last_name }*`
+        + `\n  Type: ${ chatMember.type || chatMember.user ? 'user' : 'unknown'}`
+        + `\n  Status: ${chatMember.status}\n`;
+    } catch (e) {
+      console.error('ERROR: ', e);
+    }
+  }
+
+  // await bot.sendMessage(chatId, JSON.stringify(subscribersChatIdList, null, 2));
+  await bot.sendMessage(chatId, outputString, { parse_mode: 'Markdown' });
+};
+
 bot.onText(/\/subscribe/, async (msg) => {
   logMsg(msg);
   await storeChatId(msg);
@@ -205,24 +227,7 @@ bot.onText(/\/tst( +\d)?/, async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
   if (chatId != myChatId) return;
-  console.log(process.env.REPLIT_DB_URL);
-
-  // await bot.sendMessage(chatId, JSON.stringify(chatIdDictionary, null, 2));
-  // const chatMember = await bot.getChatMember(chatId, chatId);
-  // await bot.sendMessage(chatId, JSON.stringify(chatMember, null, 2));
-
-  const subscribersChatIdList = await dbClient.get(CHAT_ID_DICTIONARY_KEY);
-
-  for (let chatId in subscribersChatIdList) {
-    try {
-      const chatMember = await bot.getChatMember(chatId, chatId);
-      subscribersChatIdList[chatId] = chatMember;
-    } catch (e) {
-      console.error('ERROR: ', e);
-    }
-  }
-
-  await bot.sendMessage(chatId, JSON.stringify(subscribersChatIdList, null, 2));
+  await printDictionaries(chatId);
 });
 
 bot.onText(/\/next( +\d)?/, async (msg) => {
