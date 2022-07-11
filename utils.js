@@ -13,10 +13,10 @@ const getConvertedItem = (item, index) => {
 
 const getConvertedIVItem = (item, index) => {
   return `${ getIVLink(item.title.replace(/[^a-zA-Z ]/g, ""), item.link) }️`
+    + '\n\n' + `[🗺️ See on map](https://maps.google.com/?q=${ encodeURIComponent(item.location_address ? item.location_address : item.location_name) })`
     + '\n\n' + `${ item.content.replace(/<[^>]*>?/gm, '').substring(0, 200) + '...' }`
     + '\n\n' + `${ item.date }`
-    + '\n\n' + `${ item.location_name } ${ item.location_address }`
-    + '\n\n' + `[See on map](https://maps.google.com/?q=${ encodeURIComponent(item.location_address ? item.location_address : item.location_name) })`;
+    + '\n\n' + `${ item.location_name } ${ item.location_address }`;
 };
 
 const getFormattedTimeFromEventDate = (dateString) => {

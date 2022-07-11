@@ -198,9 +198,9 @@ const handleUnsubscribe = async (chatId) => {
 const printDictionaries = async (chatId) => {
   const subscribersChatIdList = await dbClient.get(CHAT_ID_DICTIONARY_KEY);
 
-  let outputString = '┏━━┫ *Users* ┣━━━━━━━━━━━━━┓\n';
-  let separatorString = '\n┣━━┫ *Groups* ┣━━━━━━━━━━━━┫\n';
-  let getClosingString = (total) => `\n┗━━┫ *Total: ${total}* ┣━━━━━━━━━━━━┛`;
+  let outputString = '┏━━┫ *Users* ┣\n';
+  let separatorString = '\n┣━━┫ *Groups* ┣\n';
+  let getClosingString = (total) => `\n┗━━┫ *Total: ${total}* ┣`;
 
   const members = Object.values(subscribersChatIdList)
     .sort((memberA, memberB) => memberA.id > 0 ? -1 : 1);
