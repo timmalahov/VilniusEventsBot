@@ -7,13 +7,13 @@ const getConvertedItem = (item, index) => {
     + '\n\n' + `📅 ${ item.date }`
     + '\n' + `🗺️ ${ item.location_name.substring(0, 200) } ${ item.location_address.substring(0, 200) } 
 (https://maps.google.com/?q=${ encodeURIComponent(item.location_address ? item.location_address : item.location_name) })`
-    + '\n\n' + `${ item.content.substring(0, 200) + '...' }`
+    + '\n\n' + `${ item.content.replace(/<[^>]*>?/gm, '').substring(0, 200) + '...' }`
     + '\n\n' + `${ item.link }`;
 };
 
 const getConvertedIVItem = (item, index) => {
   return `${ getIVLink(item.title.replace(/[^a-zA-Z ]/g, ""), item.link) }️`
-    + '\n\n' + `${ item.content.substring(0, 200) + '...' }`
+    + '\n\n' + `${ item.content.replace(/<[^>]*>?/gm, '').substring(0, 200) + '...' }`
     + '\n\n' + `${ item.date }`
     + '\n\n' + `${ item.location_name } ${ item.location_address }`
     + '\n\n' + `[See on map](https://maps.google.com/?q=${ encodeURIComponent(item.location_address ? item.location_address : item.location_name) })`;

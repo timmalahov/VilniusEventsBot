@@ -30,7 +30,7 @@ new CronJob(
       await logCronMessage(myChatId, bot, animations.happy, newEvents);
       return;
     }
-    await bot.sendAnimation(myChatId, animations.thinking);
+    // await bot.sendAnimation(myChatId, animations.thinking);
   },
   null,
   true, // job.start() not needed if true
@@ -198,36 +198,43 @@ const handleUnsubscribe = async (chatId) => {
 const printDictionaries = async (chatId) => {
   const subscribersChatIdList = await dbClient.get(CHAT_ID_DICTIONARY_KEY);
 
-  let outputString = '';
+  let outputString = '┏━━┫ *Users* ┣━━━━━━━━━━━━━┓\n';
+  let separatorString = '\n┣━━┫ *Groups* ┣━━━━━━━━━━━━┫\n';
+  let getClosingString = (total) => `\n┗━━┫ *Total: ${total}* ┣━━━━━━━━━━━━┛`;
 
-  for (let chatId in subscribersChatIdList) {
+  const members = Object.values(subscribersChatIdList)
+    .sort((memberA, memberB) => memberA.id > 0 ? -1 : 1);
+
+  for await (const member of members) {
     try {
-      const chatMember = await bot.getChatMember(chatId, chatId);
-      subscribersChatIdList[chatId] = chatMember;
+      const chatMember = await bot.getChatMember(member.id, member.id);
       outputString +=
-        `\n*${ chatMember.title || chatMember.name || chatMember.user.first_name + ' ' + chatMember.user.last_name }*`
-        + `\n  Type: ${ chatMember.type || chatMember.user ? 'user' : 'unknown' }`
-        + `\n  Status: ${ chatMember.status }\n`;
+        `\n    *${ chatMember.title || chatMember.name || chatMember.user.first_name + ' ' + chatMember.user.last_name }*`
+        + `\n     Type: ${ chatMember.type || chatMember.user ? 'user' : 'unknown' }`
+        + `\n     Status: ${ chatMember.status }\n`;
     } catch (e) {
-      console.error('ERROR: ', e);
+      console.error('ERROR: ', e.code);
+      
+      outputString += separatorString +
+        `\n    *${ member.title || member.name || member.first_name }*`
+        + `\n     Type: ${ member.type }`
+        + `\n     Status: bot is member\n`;
 
-      outputString +=
-        `\n*${ subscribersChatIdList[chatId].title || subscribersChatIdList[chatId].name }*`
-        + `\n  Type: ${ subscribersChatIdList[chatId].type }`
-        + `\n  Status: ${ subscribersChatIdList[chatId].status || 'unkonwn' }\n`;
+      separatorString = '';
     }
   }
 
-  // await bot.sendMessage(chatId, JSON.stringify(subscribersChatIdList, null, 2));
+  outputString += getClosingString(members.length);
+
   await bot.sendMessage(chatId, outputString, { parse_mode: 'Markdown' });
 };
 
-bot.onText(/\/subscribe/, async (msg) => {
+bot.onText(/^\/subscribe$/, async (msg) => {
   logMsg(msg);
   await storeChatId(msg);
 });
 
-bot.onText(/\/tst( +\d)?/, async (msg) => {
+bot.onText(/^\/tst$/, async (msg) => {
   logMsg(msg);
   const chatId = msg.chat.id;
   const text = msg.text;
@@ -235,28 +242,37 @@ bot.onText(/\/tst( +\d)?/, async (msg) => {
   await printDictionaries(chatId);
 });
 
-bot.onText(/\/next( +\d)?/, async (msg) => {
+bot.onText(/^\/tstraw$/, async (msg) => {
+  logMsg(msg);
+  const chatId = msg.chat.id;
+  const text = msg.text;
+  if (chatId != myChatId) return;
+  const subscribersChatIdList = await dbClient.get(CHAT_ID_DICTIONARY_KEY);
+  await bot.sendMessage(chatId, JSON.stringify(subscribersChatIdList, null, 2));
+});
+
+bot.onText(/^\/next( +\d)?/, async (msg) => {
   logMsg(msg);
   const text = msg.text;
   const chatId = msg.chat.id;
   await handleNextWithOptions(chatId, text);
 });
 
-bot.onText(/\/short$/, async (msg) => {
+bot.onText(/^\/short$/, async (msg) => {
   logMsg(msg);
   const text = `/next 10 ${ SHORT_MODIFIER }`;
   const chatId = msg.chat.id;
   await handleNextWithOptions(chatId, text);
 });
 
-bot.onText(/\/shortpoll$/, async (msg) => {
+bot.onText(/^\/shortpoll$/, async (msg) => {
   logMsg(msg);
   const text = `/next 10 ${ SHORT_POLL_MODIFIER }`;
   const chatId = msg.chat.id;
   await handleNextWithOptions(chatId, text);
 });
 
-bot.onText(/\/update/, async (msg) => { // temp manual update
+bot.onText(/^\/update$/, async (msg) => { // temp manual update
   logMsg(msg);
   const chatId = msg.chat.id;
   if (chatId != myChatId) {
@@ -272,7 +288,7 @@ bot.onText(/\/update/, async (msg) => { // temp manual update
    ${ newEventsData.events.map(event => event.link).join('\n') }`);
 });
 
-bot.onText(/\/cleardb/, async (msg) => { // temp manual events removal
+bot.onText(/^\/cleardb$/, async (msg) => { // temp manual events removal
   logMsg(msg);
   const chatId = msg.chat.id;
   await bot.sendChatAction(chatId, 'typing');
@@ -280,7 +296,7 @@ bot.onText(/\/cleardb/, async (msg) => { // temp manual events removal
   await bot.sendMessage(chatId, `Db events are cleared`);
 });
 
-bot.onText(/\/dropdb/, async (msg) => { // temp manual db cleanup
+bot.onText(/^\/dropdb$/, async (msg) => { // temp manual db cleanup
   logMsg(msg);
   const chatId = msg.chat.id;
   if (chatId != myChatId) {
@@ -292,7 +308,7 @@ bot.onText(/\/dropdb/, async (msg) => { // temp manual db cleanup
   await bot.sendMessage(chatId, `Db is emptied`);
 });
 
-bot.onText(/\/runupd/, async (msg) => { // temp manual updateProcess start
+bot.onText(/^\/runupd$/, async (msg) => { // temp manual updateProcess start
   const chatId = msg.chat.id;
   if (chatId != myChatId) {
     await handleUnknownCommand(chatId);
@@ -301,19 +317,19 @@ bot.onText(/\/runupd/, async (msg) => { // temp manual updateProcess start
   await updateAndNotify();
 });
 
-bot.onText(/\/all/, async (msg) => { // get all. deprecated
+bot.onText(/^\/all$/, async (msg) => { // get all. deprecated
   const chatId = msg.chat.id;
   logMsg(msg);
   await sendEvents(chatId);
 });
 
-bot.onText(/\/iv/, async (msg) => { // get all. deprecated
+bot.onText(/^\/iv$/, async (msg) => { // get all. deprecated
   const chatId = msg.chat.id;
   logMsg(msg);
   await sendEvents(chatId, 5);
 });
 
-bot.onText(/\/start/, async (msg) => {
+bot.onText(/^\/start$/, async (msg) => {
   const chatId = msg.chat.id;
   logMsg(msg);
   await bot.sendAnimation(chatId, animations.start);
@@ -321,13 +337,13 @@ bot.onText(/\/start/, async (msg) => {
   await handleHelp(chatId);
 });
 
-bot.onText(/\/\?|\/help/, async (msg) => {
+bot.onText(/^\/\?|^\/help$/, async (msg) => {
   const chatId = msg.chat.id;
   logMsg(msg);
   await handleHelp(chatId);
 });
 
-bot.onText(/\/pic/, async (msg) => {
+bot.onText(/^\/pic$/, async (msg) => {
   logMsg(msg);
   const chatId = msg.chat.id;
   if (chatId != myChatId) {
@@ -344,7 +360,7 @@ bot.onText(/\/pic/, async (msg) => {
   });
 });
 
-bot.onText(/\/updchan/, async (msg) => {
+bot.onText(/^\/updchan$/, async (msg) => {
   logMsg(msg);
   const chatId = msg.chat.id;
   if (chatId != myChatId) {
@@ -354,13 +370,13 @@ bot.onText(/\/updchan/, async (msg) => {
   await sendEvents(myChannelId);
 });
 
-bot.onText(/\/unsubscribe/, async (msg) => {
+bot.onText(/^\/unsubscribe$/, async (msg) => {
   logMsg(msg);
   const chatId = msg.chat.id;
   await handleUnsubscribe(chatId);
 });
 
-bot.onText(/\/notchan/, async (msg) => {
+bot.onText(/^\/notchan$/, async (msg) => {
   logMsg(msg);
   const chatId = msg.chat.id;
   if (chatId != myChatId) {
